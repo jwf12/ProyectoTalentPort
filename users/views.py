@@ -5,10 +5,12 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework import status
 from django.contrib.auth.hashers import make_password
 
-from .models import User
-from .serializers import UserSerializer
+from .models import FriendList, User
+from .serializers import FriendListSerializer, UserSerializer
 import jwt, datetime
 
+
+# USER LOGIN REGISTER LOG OUT GET UPDATE
 class RegisterApiView(APIView):
     """
     This endpoint creates a new user.
@@ -45,7 +47,7 @@ class RegisterApiView(APIView):
             if User.objects.filter(email=mail):#Mail validation, unique=True
                 return Response({'error': 'Email already exist'}, status=status.HTTP_400_BAD_REQUEST)                
             
-            return Response({'error': 'All fields required'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': serialiazer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LoginApiView(APIView):
@@ -125,6 +127,7 @@ class EditUserApiView(APIView):
             
         return Response({'error': 'User not found'}, status=status.HTTP_400_BAD_REQUEST)
 
+
 class UserGetViewAPIView(APIView):
     """
     This endpoint retrieves information about the authenticated user.
@@ -174,3 +177,16 @@ class LogoutApiView(APIView):
         return response
 
     
+#USER FRIANDLIST
+
+class FriendAdd(generics.CreateAPIView):
+    model = FriendList
+    serializer_class = FriendListSerializer
+
+class FriendListView(generics.ListAPIView):
+    model = FriendList
+    serializer_class = FriendListSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        return FriendList.objects.filter(userlist=user)
