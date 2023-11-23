@@ -7,10 +7,13 @@ from django.contrib.auth.hashers import make_password
 
 from .models import FriendList, User
 from .serializers import FriendListSerializer, UserSerializer
+
 import jwt, datetime
+from rest_framework import filters 
 
 
 # USER LOGIN REGISTER LOG OUT GET UPDATE
+
 class RegisterApiView(APIView):
     """
     This endpoint creates a new user.
@@ -176,17 +179,66 @@ class LogoutApiView(APIView):
         }
         return response
 
-    
-#USER FRIANDLIST
+
+class UserSearcherView(generics.ListAPIView):
+    """
+        Search for users based on a given search term.
+
+        - Query Parameter:
+            - `search_term` (string): The term to search for users.
+
+        - Responses:
+            - 302 FOUND: List of users matching the search term.
+            - 404 Not Found: If no users match the search term.
+    """
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+    def get(self, request, search_term=None, format=None):
+        if search_term is not None:
+            queryset = User.objects.filter(username__icontains=search_term) | User.objects.filter(name__icontains=search_term)
+            serializer = UserSerializer(queryset, many=True)
+            return Response(serializer.data, status=status.HTTP_302_FOUND)
+        else:
+            return Response({'Error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class OpenWorkView(generics.ListAPIView):
+    queryset = User.objects.filter(open_work=True)
+    serializer_class = UserSerializer
+
+
+#USER FRIENDLIST
 
 class FriendAdd(generics.CreateAPIView):
+    """
+    This endpoint adds a friend to the user list friend.
+    """
     model = FriendList
     serializer_class = FriendListSerializer
 
+
 class FriendListView(generics.ListAPIView):
+    """
+    This endpoint lists all the friends of the user.
+    """
     model = FriendList
     serializer_class = FriendListSerializer
 
     def get_queryset(self):
         user = self.request.user
         return FriendList.objects.filter(userlist=user)
+    
+
+class DeleteFriendView(generics.RetrieveDestroyAPIView):
+    """
+    This endpoint deletes a friend of the user.
+    """
+    model = FriendList
+    serializer_class = FriendListSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        return FriendList.objects.filter(userlist=user)
+    
+

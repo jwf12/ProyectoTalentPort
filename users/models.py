@@ -41,4 +41,4 @@ class FriendList(models.Model):
     friendlist = models.ForeignKey(User, on_delete=models.CASCADE, related_name='friendlist_set')
 
     def __str__(self):
-        return self.userlist.username
+        return f'{self.friendlist.username}'
